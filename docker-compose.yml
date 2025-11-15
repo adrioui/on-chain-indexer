@@ -1,0 +1,125 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    command: uvicorn deft_indexer.api.main:app --host 0.0.0.0 --port 8080
+    environment:
+      DATABASE_URL: postgresql+psycopg://deft:deft@postgres:5432/deft
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      KAFKA_TOPIC: deft.events
+      RPC_URL: http://anvil:8545
+      FINALITY_BLOCKS: 1
+      RPC_REQUESTS_PER_SECOND: 1
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      redpanda:
+        condition: service_started
+      anvil:
+        condition: service_started
+
+  worker:
+    build: .
+    command: celery -A deft_indexer.celery_app.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      DATABASE_URL: postgresql+psycopg://deft:deft@postgres:5432/deft
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      KAFKA_TOPIC: deft.events
+      RPC_URL: http://anvil:8545
+      FINALITY_BLOCKS: 1
+      RPC_REQUESTS_PER_SECOND: 1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      redpanda:
+        condition: service_started
+      anvil:
+        condition: service_started
+
+  beat:
+    build: .
+    command: celery -A deft_indexer.celery_app.celery_app beat --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+psycopg://deft:deft@postgres:5432/deft
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      KAFKA_TOPIC: deft.events
+      RPC_URL: http://anvil:8545
+      FINALITY_BLOCKS: 1
+      RPC_REQUESTS_PER_SECOND: 1
+    depends_on:
+      redis:
+        condition: service_started
+      anvil:
+        condition: service_started
+
+  postgres:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: deft
+      POSTGRES_USER: deft
+      POSTGRES_PASSWORD: deft
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deft"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: docker.io/library/redis:7-alpine
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+
+  redpanda:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --overprovisioned
+      - --node-id
+      - "0"
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:29092
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:9092,OUTSIDE://localhost:29092
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+      - "9644:9644"
+
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    environment:
+      ANVIL_IP_ADDR: 0.0.0.0
+    command:
+    - anvil
+    - --host
+    - 0.0.0.0
+    - --port
+    - "8545"
+    ports:
+      - "8545:8545"
+
+volumes:
+  postgres-data:

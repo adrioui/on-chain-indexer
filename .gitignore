@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+.env.local
+.env.*.local
+
+# Environment Variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Database
+*.db
+*.sqlite3
+*.sqlite
+
+# Logs
+*.log
+
+# Docker/
+*.pid
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Project specific
+test.db
