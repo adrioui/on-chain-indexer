@@ -63,3 +63,8 @@ celerybeat.pid
 
 # Project specific
 test.db
+
+# Claude Code directories
+.claude/
+.factory/
+.opencode/
