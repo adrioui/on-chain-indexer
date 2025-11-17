@@ -18,9 +18,20 @@ export const options = {
 
 const BASE_URL = __ENV.API_URL || 'http://localhost:8080';
 
+
 export default function () {
+
+  // Generate exactly 40 hex characters (160 bits / 4 bits per hex digit)
+  function randomAddress() {
+    let hex = '';
+    for (let i = 0; i < 40; i++) {
+      hex += Math.floor(Math.random() * 16).toString(16);
+    }
+    return `0x${hex}`;
+  }
+
   const payload = JSON.stringify({
-    address: `0x${Math.random().toString(16).substr(2, 40)}`, // Random address
+    address: randomAddress(),
     network: 'ethereum',
     start_block: 0,
     abi_json: '[]',
