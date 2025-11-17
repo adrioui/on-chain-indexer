@@ -56,7 +56,7 @@ class Contract(Base):
 class Checkpoint(Base):
     __tablename__ = "checkpoints"
     __table_args__ = (
-        Index("ix_checkpoint_contract_block", "contract_id", "last_block"),
+        Index("ix_checkpoint_last_block", "contract_id", "last_block"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
