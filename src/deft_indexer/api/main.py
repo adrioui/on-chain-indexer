@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 import structlog
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +26,16 @@ from ..web3_provider import get_web3
 settings = get_settings()
 log = structlog.get_logger(__name__)
 
-app = FastAPI(title=settings.app_name)
+
+@asynccontextmanager
+async def lifespan(app):
+    # Startup
+    configure_logging()
+    init_db()
+    yield
+
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -78,12 +89,6 @@ async def limit_request_body_size(request: Request, call_next):
 
     response = await call_next(request)
     return response
-
-
-@app.on_event("startup")
-def startup() -> None:
-    configure_logging()
-    init_db()
 
 
 @app.get("/health")
